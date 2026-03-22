@@ -34,6 +34,7 @@ export default function Home() {
     if (confirm('Tem certeza que deseja excluir esta questão?')) {
       try {
         await deleteQuestao(id);
+        if (expandedRow === id) setExpandedRow(null);
         toast.success('Questão excluída com sucesso!');
       } catch (err) {
         toast.error('Erro ao excluir questão');
