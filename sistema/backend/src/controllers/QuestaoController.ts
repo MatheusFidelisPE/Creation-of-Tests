@@ -59,9 +59,9 @@ export class QuestaoController {
   static async atualizar(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const { enunciado } = req.body;
+      const { enunciado, alternativas } = req.body;
 
-      const questao = await questaoService.atualizarQuestao(Number(id), enunciado);
+      const questao = await questaoService.atualizarQuestao(Number(id), enunciado, alternativas);
       res.status(200).json({
         success: true,
         data: questao,

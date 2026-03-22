@@ -65,7 +65,7 @@ export default function Home() {
         toast.error(error.message || 'Erro ao carregar provas');
       }
     })();
-  }, [fetchProvas]);
+   }, []);
 
   const handleRowClick = (questao: Questao) => {
     setExpandedRow(expandedRow === questao.id ? null : questao.id);

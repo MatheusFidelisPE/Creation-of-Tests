@@ -27,9 +27,23 @@ export const useQuestoes = () => {
 
   const createQuestao = async (enunciado: string, alternativas: Omit<Alternativa, 'id' | 'questaoId'>[]) => {
     try {
-      const response = await axios.post(`${API_BASE}/questoes`, { enunciado, alternativas });
-      setQuestoes(prev => [...prev, response.data.data]);
-      return response.data.data;
+      const response = await axios.post(`${API_BASE}/questoes`, { enunciado });
+      const createdQuestao = response.data.data;
+
+      // Criar alternativas em sequência com o ID da questão criada
+      for (const alt of alternativas) {
+        await axios.post(`${API_BASE}/alternativas`, {
+          questaoId: createdQuestao.id,
+          descricao: alt.descricao,
+          correta: alt.correta,
+        });
+      }
+
+      // Buscar a questão com alternativas atualizadas
+      const questaoResponse = await axios.get(`${API_BASE}/questoes/${createdQuestao.id}`);
+      const questaoComAlternativas = questaoResponse.data.data;
+      setQuestoes(prev => [...prev, questaoComAlternativas]);
+      return questaoComAlternativas;
     } catch (err) {
       throw new Error('Erro ao criar questão');
     }

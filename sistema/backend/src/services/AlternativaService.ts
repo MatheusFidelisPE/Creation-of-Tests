@@ -58,4 +58,9 @@ export class AlternativaService {
 
     return await this.alternativaRepository.deletar(id);
   }
+  async deletarAlternativasPorQuestao(questaoId: number) {
+    return this.alternativaRepository.buscarPorQuestaoId(questaoId).then(alternativas => {
+      return Promise.all(alternativas.map(alt => this.deletarAlternativa(alt.id))); 
+    });
+    }
 }

@@ -1,10 +1,13 @@
 import { QuestaoRepository } from "../repositories/QuestaoRepository";
+import { AlternativaService } from "./AlternativaService";
 
 export class QuestaoService {
   private questaoRepository: QuestaoRepository;
+  private alternativaService: AlternativaService;
 
   constructor() {
     this.questaoRepository = new QuestaoRepository();
+    this.alternativaService = new AlternativaService();
   }
 
   // Criar uma nova questão
@@ -32,8 +35,12 @@ export class QuestaoService {
     return await this.questaoRepository.buscarTodas();
   }
 
-  // Atualizar uma questão
-  async atualizarQuestao(id: number, enunciado: string) {
+  // Atualizar uma questão (enunciado + alternativas)
+  async atualizarQuestao(
+    id: number,
+    enunciado: string,
+    alternativas?: Omit<{ id?: number; questaoId?: number; descricao: string; correta: boolean; }, 'id' | 'questaoId'>[]
+  ) {
     if (!enunciado || enunciado.trim().length === 0) {
       throw new Error("Enunciado não pode ser vazio");
     }
@@ -43,9 +50,19 @@ export class QuestaoService {
       throw new Error(`Questão com id ${id} não encontrada`);
     }
 
-    return await this.questaoRepository.atualizar(id, {
+    const questaoAtualizada = await this.questaoRepository.atualizar(id, {
       enunciado: enunciado.trim(),
     });
+
+    if (alternativas && alternativas.length > 0) {
+      await this.alternativaService.deletarAlternativasPorQuestao(id);
+
+      for (const alt of alternativas) {
+        await this.alternativaService.criarAlternativa(id, alt.correta, alt.descricao);
+      }
+    }
+
+    return await this.questaoRepository.buscarPorId(id);
   }
 
   // Deletar uma questão
