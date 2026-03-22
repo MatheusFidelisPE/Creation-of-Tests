@@ -17,8 +17,8 @@ export default function EditarProvaModal({ isOpen, prova, questoesDisponiveis, o
 
   useEffect(() => {
     if (prova) {
-      setSelectedQuestaoIds(prova.questoes.map((q) => q.id));
-      setTipoDeResposta(prova.tipoDeResposta === 'SOMA_EXPONENCIAL' ? 'NUMEROS' : 'LETRAS');
+      setSelectedQuestaoIds(prova.questoes.map((pq) => pq.questaoId));
+      setTipoDeResposta(prova.tipoDeResposta);
     }
   }, [prova]);
 

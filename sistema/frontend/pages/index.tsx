@@ -165,8 +165,8 @@ export default function Home() {
             <div className="mt-4 p-4 border border-gray-300 rounded bg-white">
               <h3 className="text-xl font-semibold mb-2">Questões da Prova #{selectedProva.id}</h3>
               <ul className="list-disc list-inside space-y-1">
-                {selectedProva.questoes.map((questao) => (
-                  <li key={questao.id}>{questao.enunciado}</li>
+                {selectedProva.questoes.map((pq) => (
+                  <li key={pq.questao.id}>{pq.questao.enunciado}</li>
                 ))}
               </ul>
             </div>

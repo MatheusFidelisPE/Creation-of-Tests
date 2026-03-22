@@ -12,10 +12,16 @@ export interface Questao {
   alternativas: Alternativa[];
 }
 
+export interface ProvaQuestao {
+  provaId: number;
+  questaoId: number;
+  questao: Questao;
+}
+
 export interface Prova {
   id: number;
-  tipoDeResposta: "LETRAS" | "SOMA_EXPONENCIAL";
-  questoes: Questao[];
+  tipoDeResposta: 'LETRAS' | 'NUMEROS';
+  questoes: ProvaQuestao[];
   dataCriacao: string;
   dataModificacao: string;
 }
