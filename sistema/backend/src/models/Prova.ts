@@ -49,3 +49,18 @@ export interface ResultadoCorrecaoDTO {
     respostaCorreta: string;
   }[];
 }
+
+// DTO para gerar gabaritos
+export interface GeradorGabaritosDTO {
+  prova_id: number;
+  quantidade_provas: number;
+  nome_professor: string;
+  nome_disciplina: string;
+  data: string;
+}
+
+// Interface para representar o gabarito de uma prova gerada
+export interface Gabarito {
+  id: string;
+  gabaritos: (string | number)[];
+}

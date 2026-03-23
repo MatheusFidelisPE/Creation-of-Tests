@@ -141,4 +141,37 @@ export class ProvaController {
       });
     }
   }
+
+  // Gerar gabaritos para múltiplas provas
+  static async gerarGabaritos(req: Request, res: Response) {
+    try {
+      const { prova_id, quantidade_provas, nome_professor, nome_disciplina, data } = req.body;
+
+      // Validar campos obrigatórios
+      if (!prova_id || !quantidade_provas || !nome_professor || !nome_disciplina || !data) {
+        return res.status(400).json({
+          success: false,
+          error: "Todos os campos são obrigatórios: prova_id, quantidade_provas, nome_professor, nome_disciplina, data",
+        });
+      }
+
+      const result = await provaService.gerarGabaritos({
+        prova_id: Number(prova_id),
+        quantidade_provas: Number(quantidade_provas),
+        nome_professor,
+        nome_disciplina,
+        data,
+      });
+
+      // Retornar CSV
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      res.setHeader("Content-Disposition", `attachment; filename="gabarito_${prova_id}_${Date.now()}.csv"`);
+      res.status(200).send(result.csv);
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  }
 }

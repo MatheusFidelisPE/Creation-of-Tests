@@ -1,6 +1,6 @@
 import { ProvaRepository } from "../repositories/ProvaRepository";
 import { QuestaoRepository } from "../repositories/QuestaoRepository";
-import { CreateProvaDTO, CreateProvaComQuestoesSelecionadasDTO, ResultadoCorrecaoDTO, UpdateProvaDTO } from "../models/Prova";
+import { CreateProvaDTO, CreateProvaComQuestoesSelecionadasDTO, ResultadoCorrecaoDTO, UpdateProvaDTO, GeradorGabaritosDTO, Gabarito } from "../models/Prova";
 import { CorrecaoService } from "./CorrecaoService";
 
 export class ProvaService {
@@ -150,5 +150,96 @@ export class ProvaService {
     }
 
     return await this.provaRepository.deletar(id);
+  }
+
+  // Gerar múltiplas provas com gabaritos
+  async gerarGabaritos(data: GeradorGabaritosDTO): Promise<{ csv: string; gabaritos: Gabarito[] }> {
+    // Validar entrada
+    if (data.quantidade_provas < 1) {
+      throw new Error("Quantidade de provas deve ser no mínimo 1");
+    }
+
+    // Buscar a prova com suas questões
+    const prova = await this.provaRepository.buscarPorId(data.prova_id);
+    if (!prova) {
+      throw new Error(`Prova com id ${data.prova_id} não encontrada`);
+    }
+
+    // Extrair questões da prova
+    const questoesDaProva = prova.questoes.map((pq: any) => pq.questao);
+
+    if (questoesDaProva.length === 0) {
+      throw new Error("A prova não possui questões");
+    }
+
+    // Array para armazenar os gabaritos
+    const gabaritos: Gabarito[] = [];
+
+    // Gerar n provas diferentes
+    for (let i = 0; i < data.quantidade_provas; i++) {
+      // Embaralhar ordem das questões
+      const questoesEmbaralhadas = [...questoesDaProva].sort(() => Math.random() - 0.5);
+      
+      // Para cada questão, embaralhar as alternativas e extrair as corretas
+      const gabaritoDaProva: (string | number)[] = [];
+
+      for (const questao of questoesEmbaralhadas) {
+        // Embaralhar alternativas
+        const alternativasEmbaralhadas = [...questao.alternativas].sort(() => Math.random() - 0.5);
+
+        // Gerar gabarito baseado no tipo de resposta
+        if (prova.tipoDeResposta === "LETRAS") {
+          // Retornar as letras corretas (A, B, C, D, E, etc)
+          const letras: string[] = [];
+          alternativasEmbaralhadas.forEach((alt: any, index: number) => {
+            if (alt.correta) {
+              letras.push(String.fromCharCode(65 + index));
+            }
+          });
+          gabaritoDaProva.push(letras.join(""));
+        } else if (prova.tipoDeResposta === "SOMA_EXPONENCIAL") {
+          // Retornar a soma de 2^(posição)
+          let soma = 0;
+          alternativasEmbaralhadas.forEach((alt: any, index: number) => {
+            if (alt.correta) {
+              soma += Math.pow(2, index);
+            }
+          });
+          gabaritoDaProva.push(soma);
+        }
+      }
+
+      // Gerar ID único para a prova
+      const idUnico = `${data.prova_id}_${Date.now()}_${i}`;
+
+      gabaritos.push({
+        id: idUnico,
+        gabaritos: gabaritoDaProva,
+      });
+    }
+
+    // Gerar CSV
+    const csv = this.gerarCSV(gabaritos, questoesDaProva.length);
+
+    return { csv, gabaritos };
+  }
+
+  // Gerar CSV a partir dos gabaritos
+  private gerarCSV(gabaritos: Gabarito[], quantidadeQuestoes: number): string {
+    // Cabeçalho
+    const headers = ["ID"];
+    for (let i = 1; i <= quantidadeQuestoes; i++) {
+      headers.push(`Questão ${i}`);
+    }
+
+    let csv = headers.join(",") + "\n";
+
+    // Dados
+    for (const gabarito of gabaritos) {
+      const linha = [gabarito.id, ...gabarito.gabaritos];
+      csv += linha.join(",") + "\n";
+    }
+
+    return csv;
   }
 }
