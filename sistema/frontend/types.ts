@@ -20,7 +20,7 @@ export interface ProvaQuestao {
 
 export interface Prova {
   id: number;
-  tipoDeResposta: 'LETRAS' | 'NUMEROS';
+  tipoDeResposta: 'LETRAS' | 'SOMA_EXPONENCIAL';
   questoes: ProvaQuestao[];
   dataCriacao: string;
   dataModificacao: string;

@@ -5,15 +5,17 @@ import ProvasTable from '../components/ProvasTable';
 import QuestaoModal from '../components/QuestaoModal';
 import CriarProvaModal from '../components/CriarProvaModal';
 import EditarProvaModal from '../components/EditarProvaModal';
+import GerarProvasModal from '../components/GerarProvasModal';
 import QuestaoAccordion from '../components/QuestaoAccordion';
 import { useQuestoes } from '../hooks/useApi';
 import { Questao, Prova } from '../types';
 
 export default function Home() {
-  const { questoes, loading, createQuestao, updateQuestao, deleteQuestao, createProva, fetchProvas, deleteProva, updateProva } = useQuestoes();
+  const { questoes, loading, createQuestao, updateQuestao, deleteQuestao, createProva, fetchProvas, deleteProva, updateProva, gerarGabaritos } = useQuestoes();
   const [modalOpen, setModalOpen] = useState(false);
   const [criarProvaModalOpen, setCriarProvaModalOpen] = useState(false);
   const [editarProvaModalOpen, setEditarProvaModalOpen] = useState(false);
+  const [gerarProvasModalOpen, setGerarProvasModalOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [editingQuestao, setEditingQuestao] = useState<Questao | undefined>();
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
@@ -72,7 +74,7 @@ export default function Home() {
     setExpandedRow(expandedRow === questao.id ? null : questao.id);
   };
 
-  const handleCriarProva = async (tipoDeResposta: 'LETRAS' | 'NUMEROS') => {
+  const handleCriarProva = async (tipoDeResposta: 'LETRAS' | 'SOMA_EXPONENCIAL') => {
     try {
       const prova = await createProva(selectedIds, tipoDeResposta);
       const provasData = await fetchProvas();
@@ -104,12 +106,27 @@ export default function Home() {
     setEditarProvaModalOpen(true);
   };
 
-  const handleAtualizarProva = async (provaId: number, questoes: number[], tipoDeResposta: 'LETRAS' | 'NUMEROS') => {
+  const handleAtualizarProva = async (provaId: number, questoes: number[], tipoDeResposta: 'LETRAS' | 'SOMA_EXPONENCIAL') => {
     await updateProva(provaId, questoes, tipoDeResposta);
     const provasData = await fetchProvas();
     setProvas(provasData);
     const provaAtualizada = provasData.find((p: Prova) => p.id === provaId) || null;
     setSelectedProva(provaAtualizada);
+  };
+
+  const handleGerarProvas = async (data: {
+    prova_id: number;
+    quantidade_provas: number;
+    nome_professor: string;
+    nome_disciplina: string;
+    data: string;
+  }) => {
+    try {
+      await gerarGabaritos(data);
+      toast.success('Provas geradas e baixadas com sucesso!');
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao gerar provas');
+    }
   };
 
   if (loading) return <div className="flex justify-center items-center min-h-screen">Carregando...</div>;
@@ -154,6 +171,13 @@ export default function Home() {
 
         <div className="mt-10">
           <h2 className="text-2xl font-bold mb-4">Provas Geradas</h2>
+          <button
+            onClick={() => setGerarProvasModalOpen(true)}
+            disabled={provas.length === 0}
+            className="mb-4 px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+          >
+            Gerar Provas Aleatórias
+          </button>
           <ProvasTable
             provas={provas}
             onSelect={setSelectedProva}
@@ -194,6 +218,13 @@ export default function Home() {
         prova={selectedProva}
         questoesDisponiveis={questoes}
         onUpdate={handleAtualizarProva}
+      />
+
+      <GerarProvasModal
+        isOpen={gerarProvasModalOpen}
+        onClose={() => setGerarProvasModalOpen(false)}
+        provas={provas}
+        onConfirm={handleGerarProvas}
       />
     </div>
   );

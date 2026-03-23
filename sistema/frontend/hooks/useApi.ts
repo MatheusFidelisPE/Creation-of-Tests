@@ -85,7 +85,7 @@ export const useQuestoes = () => {
     }
   };
 
-  const updateProva = async (id: number, questoes: number[], tipoDeResposta: 'LETRAS' | 'NUMEROS') => {
+  const updateProva = async (id: number, questoes: number[], tipoDeResposta: 'LETRAS' | 'SOMA_EXPONENCIAL') => {
     try {
       const response = await axios.put(`${API_BASE}/provas/${id}`, { questoes, tipoDeResposta });
       return response.data.data;
@@ -94,7 +94,7 @@ export const useQuestoes = () => {
     }
   };
 
-  const createProva = async (questoes: number[], tipoDeResposta: 'LETRAS' | 'NUMEROS') => {
+  const createProva = async (questoes: number[], tipoDeResposta: 'LETRAS' | 'SOMA_EXPONENCIAL') => {
     try {
       const response = await axios.post(`${API_BASE}/provas`, {
         questoes,
@@ -106,5 +106,34 @@ export const useQuestoes = () => {
     }
   };
 
-  return { questoes, loading, error, fetchQuestoes, createQuestao, updateQuestao, deleteQuestao, createProva, fetchProvas, deleteProva, updateProva };
+  const gerarGabaritos = async (data: {
+    prova_id: number;
+    quantidade_provas: number;
+    nome_professor: string;
+    nome_disciplina: string;
+    data: string;
+  }) => {
+    try {
+      const response = await axios.post(`${API_BASE}/provas/gerar-gabaritos`, data, {
+        responseType: 'blob',
+      });
+
+      // Criar um blob URL para download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute(
+        'download',
+        `provas_gabaritos_${data.prova_id}_${Date.now()}.zip`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.parentElement?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      throw new Error(err.response?.data?.error || 'Erro ao gerar provas');
+    }
+  };
+
+  return { questoes, loading, error, fetchQuestoes, createQuestao, updateQuestao, deleteQuestao, createProva, fetchProvas, deleteProva, updateProva, gerarGabaritos };
 };

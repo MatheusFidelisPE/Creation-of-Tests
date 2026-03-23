@@ -4,12 +4,12 @@ import { toast } from 'react-hot-toast';
 interface CriarProvaModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (tipoDeResposta: 'LETRAS' | 'NUMEROS') => Promise<void>;
+  onConfirm: (tipoDeResposta: 'LETRAS' | 'SOMA_EXPONENCIAL') => Promise<void>;
   selectedCount: number;
 }
 
 export default function CriarProvaModal({ isOpen, onClose, onConfirm, selectedCount }: CriarProvaModalProps) {
-  const [tipoDeResposta, setTipoDeResposta] = useState<'LETRAS' | 'NUMEROS'>('LETRAS');
+  const [tipoDeResposta, setTipoDeResposta] = useState<'LETRAS' | 'SOMA_EXPONENCIAL'>('LETRAS');
   const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
@@ -41,7 +41,7 @@ export default function CriarProvaModal({ isOpen, onClose, onConfirm, selectedCo
               name="tipoDeResposta"
               value="LETRAS"
               checked={tipoDeResposta === 'LETRAS'}
-              onChange={(e) => setTipoDeResposta(e.target.value as 'LETRAS' | 'NUMEROS')}
+              onChange={(e) => setTipoDeResposta(e.target.value as 'LETRAS' | 'SOMA_EXPONENCIAL')}
               className="mr-3 cursor-pointer"
             />
             <span className="text-gray-700">Respostas por Letras (A, B, C, D, ...)</span>
@@ -51,9 +51,9 @@ export default function CriarProvaModal({ isOpen, onClose, onConfirm, selectedCo
             <input
               type="radio"
               name="tipoDeResposta"
-              value="NUMEROS"
-              checked={tipoDeResposta === 'NUMEROS'}
-              onChange={(e) => setTipoDeResposta(e.target.value as 'LETRAS' | 'NUMEROS')}
+              value="SOMA_EXPONENCIAL"
+              checked={tipoDeResposta === 'SOMA_EXPONENCIAL'}
+              onChange={(e) => setTipoDeResposta(e.target.value as 'LETRAS' | 'SOMA_EXPONENCIAL')}
               className="mr-3 cursor-pointer"
             />
             <span className="text-gray-700">Respostas por Números Exponenciais de 2 (1, 2, 4, 8, 16, ...)</span>

@@ -7,12 +7,12 @@ interface EditarProvaModalProps {
   prova: Prova | null;
   questoesDisponiveis: Questao[];
   onClose: () => void;
-  onUpdate: (provaId: number, questoes: number[], tipoDeResposta: 'LETRAS' | 'NUMEROS') => Promise<void>;
+  onUpdate: (provaId: number, questoes: number[], tipoDeResposta: 'LETRAS' | 'SOMA_EXPONENCIAL') => Promise<void>;
 }
 
 export default function EditarProvaModal({ isOpen, prova, questoesDisponiveis, onClose, onUpdate }: EditarProvaModalProps) {
   const [selectedQuestaoIds, setSelectedQuestaoIds] = useState<number[]>([]);
-  const [tipoDeResposta, setTipoDeResposta] = useState<'LETRAS' | 'NUMEROS'>('LETRAS');
+  const [tipoDeResposta, setTipoDeResposta] = useState<'LETRAS' | 'SOMA_EXPONENCIAL'>('LETRAS');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -70,9 +70,9 @@ export default function EditarProvaModal({ isOpen, prova, questoesDisponiveis, o
             <input
               type="radio"
               name="tipoDeRespostaEdit"
-              value="NUMEROS"
-              checked={tipoDeResposta === 'NUMEROS'}
-              onChange={() => setTipoDeResposta('NUMEROS')}
+              value="SOMA_EXPONENCIAL"
+              checked={tipoDeResposta === 'SOMA_EXPONENCIAL'}
+              onChange={() => setTipoDeResposta('SOMA_EXPONENCIAL')}
               className="mr-3 cursor-pointer"
             />
             <span className="text-gray-700">Exponencial (1,2,4,8,...)</span>
