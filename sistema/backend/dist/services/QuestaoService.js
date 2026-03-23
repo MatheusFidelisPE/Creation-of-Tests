@@ -2,9 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.QuestaoService = void 0;
 const QuestaoRepository_1 = require("../repositories/QuestaoRepository");
+const AlternativaService_1 = require("./AlternativaService");
 class QuestaoService {
     constructor() {
         this.questaoRepository = new QuestaoRepository_1.QuestaoRepository();
+        this.alternativaService = new AlternativaService_1.AlternativaService();
     }
     // Criar uma nova questão
     async criarQuestao(enunciado) {
@@ -27,8 +29,8 @@ class QuestaoService {
     async listarQuestoes() {
         return await this.questaoRepository.buscarTodas();
     }
-    // Atualizar uma questão
-    async atualizarQuestao(id, enunciado) {
+    // Atualizar uma questão (enunciado + alternativas)
+    async atualizarQuestao(id, enunciado, alternativas) {
         if (!enunciado || enunciado.trim().length === 0) {
             throw new Error("Enunciado não pode ser vazio");
         }
@@ -36,9 +38,16 @@ class QuestaoService {
         if (!questao) {
             throw new Error(`Questão com id ${id} não encontrada`);
         }
-        return await this.questaoRepository.atualizar(id, {
+        const questaoAtualizada = await this.questaoRepository.atualizar(id, {
             enunciado: enunciado.trim(),
         });
+        if (alternativas && alternativas.length > 0) {
+            await this.alternativaService.deletarAlternativasPorQuestao(id);
+            for (const alt of alternativas) {
+                await this.alternativaService.criarAlternativa(id, alt.correta, alt.descricao);
+            }
+        }
+        return await this.questaoRepository.buscarPorId(id);
     }
     // Deletar uma questão
     async deletarQuestao(id) {

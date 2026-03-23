@@ -59,6 +59,26 @@ class ProvaRepository {
             },
         });
     }
+    // Atualizar uma prova (tipo de resposta e questões)
+    async atualizar(id, questoesSelecionadas, tipoDeResposta) {
+        await prisma.prova.update({
+            where: { id },
+            data: { tipoDeResposta },
+        });
+        await prisma.provaQuestao.deleteMany({
+            where: { provaId: id },
+        });
+        for (let i = 0; i < questoesSelecionadas.length; i++) {
+            await prisma.provaQuestao.create({
+                data: {
+                    provaId: id,
+                    questaoId: questoesSelecionadas[i],
+                    ordem: i + 1,
+                },
+            });
+        }
+        return await this.buscarPorId(id);
+    }
     // Deletar uma prova
     async deletar(id) {
         return await prisma.prova.delete({

@@ -1,7 +1,8 @@
 import { ProvaRepository } from "../repositories/ProvaRepository";
 import { QuestaoRepository } from "../repositories/QuestaoRepository";
-import { CreateProvaDTO, CreateProvaComQuestoesSelecionadasDTO, ResultadoCorrecaoDTO, UpdateProvaDTO, GeradorGabaritosDTO, Gabarito } from "../models/Prova";
+import { CreateProvaDTO, CreateProvaComQuestoesSelecionadasDTO, ResultadoCorrecaoDTO, UpdateProvaDTO, GeradorGabaritosDTO, Gabarito, ProvaGerada } from "../models/Prova";
 import { CorrecaoService } from "./CorrecaoService";
+import PDFDocument from "pdfkit";
 
 export class ProvaService {
   private provaRepository: ProvaRepository;
@@ -152,8 +153,13 @@ export class ProvaService {
     return await this.provaRepository.deletar(id);
   }
 
-  // Gerar múltiplas provas com gabaritos
-  async gerarGabaritos(data: GeradorGabaritosDTO): Promise<{ csv: string; gabaritos: Gabarito[] }> {
+  // Gerar múltiplas provas com gabaritos e PDFs
+  async gerarGabaritos(data: GeradorGabaritosDTO): Promise<{
+    csv: string;
+    gabaritos: Gabarito[];
+    provas: ProvaGerada[];
+    tipoResposta: string;
+  }> {
     // Validar entrada
     if (data.quantidade_provas < 1) {
       throw new Error("Quantidade de provas deve ser no mínimo 1");
@@ -172,20 +178,35 @@ export class ProvaService {
       throw new Error("A prova não possui questões");
     }
 
-    // Array para armazenar os gabaritos
+    // Arrays para armazenar gabaritos e provas
     const gabaritos: Gabarito[] = [];
+    const provasGeradas: ProvaGerada[] = [];
 
     // Gerar n provas diferentes
     for (let i = 0; i < data.quantidade_provas; i++) {
       // Embaralhar ordem das questões
       const questoesEmbaralhadas = [...questoesDaProva].sort(() => Math.random() - 0.5);
-      
+
       // Para cada questão, embaralhar as alternativas e extrair as corretas
       const gabaritoDaProva: (string | number)[] = [];
+      const questoesParaPDF = [];
 
       for (const questao of questoesEmbaralhadas) {
         // Embaralhar alternativas
-        const alternativasEmbaralhadas = [...questao.alternativas].sort(() => Math.random() - 0.5);
+        const alternativasEmbaralhadas = [...questao.alternativas].sort(
+          () => Math.random() - 0.5
+        );
+
+        // Armazenar questão com alternativas embaralhadas para PDF
+        questoesParaPDF.push({
+          id: questao.id,
+          enunciado: questao.enunciado,
+          alternativas: alternativasEmbaralhadas.map((alt: any) => ({
+            id: alt.id,
+            descricao: alt.descricao,
+            correta: alt.correta,
+          })),
+        });
 
         // Gerar gabarito baseado no tipo de resposta
         if (prova.tipoDeResposta === "LETRAS") {
@@ -216,12 +237,17 @@ export class ProvaService {
         id: idUnico,
         gabaritos: gabaritoDaProva,
       });
+
+      provasGeradas.push({
+        id: idUnico,
+        questoes: questoesParaPDF,
+      });
     }
 
     // Gerar CSV
     const csv = this.gerarCSV(gabaritos, questoesDaProva.length);
 
-    return { csv, gabaritos };
+    return { csv, gabaritos, provas: provasGeradas, tipoResposta: prova.tipoDeResposta };
   }
 
   // Gerar CSV a partir dos gabaritos
@@ -241,5 +267,120 @@ export class ProvaService {
     }
 
     return csv;
+  }
+
+  // Gerar PDF com todas as provas
+  async gerarPDF(
+    provas: ProvaGerada[],
+    tipoResposta: string,
+    nomeProfessor: string,
+    nomeDisciplina: string,
+    data: string
+  ): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      try {
+        const doc = new PDFDocument({
+          size: "A4",
+          margin: 40,
+          bufferPages: true,
+        });
+
+        const chunks: Buffer[] = [];
+
+        doc.on("data", (chunk) => {
+          chunks.push(chunk);
+        });
+
+        doc.on("end", () => {
+          resolve(Buffer.concat(chunks));
+        });
+
+        doc.on("error", (err) => {
+          reject(err);
+        });
+
+        // Gerar conteúdo para cada prova
+        for (let i = 0; i < provas.length; i++) {
+          const prova = provas[i];
+
+          // Sempre começar uma nova página para cada prova
+          if (i > 0) {
+            doc.addPage();
+          }
+
+          // Cabeçalho da prova
+          doc.fontSize(16).font("Helvetica-Bold");
+          doc.text(`Prova ID: ${prova.id}`, { underline: true });
+          doc.moveDown(0.5);
+
+          doc.fontSize(11).font("Helvetica");
+          doc.text(`Professor: ${nomeProfessor}`);
+          doc.text(`Disciplina: ${nomeDisciplina}`);
+          doc.text(`Data: ${data}`);
+          doc.moveDown(0.5);
+
+          // Tipo de resposta
+          if (tipoResposta === "LETRAS") {
+            doc.text("Tipo de Resposta: Letras (Marque as alternativas corretas)");
+          } else {
+            doc.text("Tipo de Resposta: Soma Exponencial (2^0 + 2^1 + ... = Soma)");
+          }
+
+          doc.moveTo(40, doc.y).lineTo(550, doc.y).stroke();
+          doc.moveDown(0.5);
+
+          // Questões
+          for (let j = 0; j < prova.questoes.length; j++) {
+            const questao = prova.questoes[j];
+
+            // Verificar se está próximo do fim da página
+            if (doc.y > 700) {
+              doc.addPage();
+            }
+
+            // Número da questão
+            doc.fontSize(12).font("Helvetica-Bold");
+            doc.text(`Questão ${j + 1}:`, { underline: true });
+            doc.moveDown(0.3);
+
+            // Enunciado
+            doc.fontSize(11).font("Helvetica");
+            doc.text(questao.enunciado, { align: "left" });
+            doc.moveDown(0.4);
+
+            // Alternativas
+            const letras = ["A", "B", "C", "D", "E", "F", "G", "H"];
+            for (let k = 0; k < questao.alternativas.length; k++) {
+              const alternativa = questao.alternativas[k];
+              if (doc.y > 720) {
+                doc.addPage();
+              }
+              doc.fontSize(10);
+              doc.text(`${letras[k]}) ${alternativa.descricao}`);
+              doc.moveDown(0.3);
+            }
+
+            // Espaço para resposta
+            doc.moveDown(0.3);
+            doc.fontSize(10).font("Helvetica-Bold");
+
+            if (tipoResposta === "LETRAS") {
+              doc.text("Resposta: ________________");
+            } else {
+              doc.text("Resposta (Soma): ________________");
+            }
+
+            doc.moveDown(0.5);
+            doc.moveTo(40, doc.y).lineTo(550, doc.y).stroke();
+            doc.moveDown(0.5);
+          }
+        }
+
+        // Finalizar documento
+        doc.end();
+      } catch (error) {
+        reject(error);
+      }
+    });
   }
 }

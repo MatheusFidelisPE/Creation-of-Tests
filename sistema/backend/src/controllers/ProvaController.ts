@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { ProvaService } from "../services/ProvaService";
+import archiver from "archiver";
 
 const provaService = new ProvaService();
 
@@ -163,10 +164,35 @@ export class ProvaController {
         data,
       });
 
-      // Retornar CSV
-      res.setHeader("Content-Type", "text/csv; charset=utf-8");
-      res.setHeader("Content-Disposition", `attachment; filename="gabarito_${prova_id}_${Date.now()}.csv"`);
-      res.status(200).send(result.csv);
+      // Gerar PDF
+      const pdfBuffer = await provaService.gerarPDF(
+        result.provas,
+        result.tipoResposta,
+        nome_professor,
+        nome_disciplina,
+        data
+      );
+
+      // Criar arquivo ZIP
+      const archive = archiver("zip", {
+        zlib: { level: 9 } // Melhor compressão
+      });
+
+      // Configurar headers para download do ZIP
+      res.setHeader("Content-Type", "application/zip");
+      res.setHeader("Content-Disposition", `attachment; filename="provas_gabaritos_${prova_id}_${Date.now()}.zip"`);
+
+      // Pipe do archive para a resposta
+      archive.pipe(res);
+
+      // Adicionar PDF ao ZIP
+      archive.append(pdfBuffer, { name: `provas_${prova_id}.pdf` });
+
+      // Adicionar CSV ao ZIP
+      archive.append(result.csv, { name: `gabaritos_${prova_id}.csv` });
+
+      // Finalizar o archive
+      await archive.finalize();
     } catch (error: any) {
       res.status(400).json({
         success: false,

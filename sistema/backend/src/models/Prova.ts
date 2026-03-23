@@ -64,3 +64,17 @@ export interface Gabarito {
   id: string;
   gabaritos: (string | number)[];
 }
+
+// Interface para representar uma prova gerada com questões embaralhadas
+export interface ProvaGerada {
+  id: string;
+  questoes: {
+    id: number;
+    enunciado: string;
+    alternativas: {
+      id: number;
+      descricao: string;
+      correta: boolean;
+    }[];
+  }[];
+}

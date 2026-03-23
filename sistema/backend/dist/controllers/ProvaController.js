@@ -1,16 +1,41 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProvaController = void 0;
 const ProvaService_1 = require("../services/ProvaService");
+const archiver_1 = __importDefault(require("archiver"));
 const provaService = new ProvaService_1.ProvaService();
 class ProvaController {
     // Gerar uma prova com questões aleatórias
     static async gerar(req, res) {
         try {
             const { quantidadeQuestoes, tipoDeResposta } = req.body;
+            const tipo = tipoDeResposta === "NUMEROS" ? "SOMA_EXPONENCIAL" : "LETRAS";
             const prova = await provaService.gerarProva({
                 quantidadeQuestoes,
-                tipoDeResposta: tipoDeResposta || "LETRAS",
+                tipoDeResposta: tipo,
+            });
+            res.status(201).json({
+                success: true,
+                data: prova,
+            });
+        }
+        catch (error) {
+            res.status(400).json({
+                success: false,
+                error: error.message,
+            });
+        }
+    }
+    // Criar uma prova com questões selecionadas
+    static async criarSelecionada(req, res) {
+        try {
+            const { questoes, tipoDeResposta } = req.body;
+            const prova = await provaService.criarProvaSelecionada({
+                questoes,
+                tipoDeResposta,
             });
             res.status(201).json({
                 success: true,
@@ -75,6 +100,27 @@ class ProvaController {
             });
         }
     }
+    // Atualizar uma prova existente
+    static async atualizar(req, res) {
+        try {
+            const { id } = req.params;
+            const { questoes, tipoDeResposta } = req.body;
+            const provaAtualizada = await provaService.atualizarProva(Number(id), {
+                questoes,
+                tipoDeResposta,
+            });
+            res.status(200).json({
+                success: true,
+                data: provaAtualizada,
+            });
+        }
+        catch (error) {
+            res.status(400).json({
+                success: false,
+                error: error.message,
+            });
+        }
+    }
     // Deletar uma prova
     static async deletar(req, res) {
         try {
@@ -87,6 +133,49 @@ class ProvaController {
         }
         catch (error) {
             res.status(404).json({
+                success: false,
+                error: error.message,
+            });
+        }
+    }
+    // Gerar gabaritos para múltiplas provas
+    static async gerarGabaritos(req, res) {
+        try {
+            const { prova_id, quantidade_provas, nome_professor, nome_disciplina, data } = req.body;
+            // Validar campos obrigatórios
+            if (!prova_id || !quantidade_provas || !nome_professor || !nome_disciplina || !data) {
+                return res.status(400).json({
+                    success: false,
+                    error: "Todos os campos são obrigatórios: prova_id, quantidade_provas, nome_professor, nome_disciplina, data",
+                });
+            }
+            const result = await provaService.gerarGabaritos({
+                prova_id: Number(prova_id),
+                quantidade_provas: Number(quantidade_provas),
+                nome_professor,
+                nome_disciplina,
+                data,
+            });
+            // Gerar PDF
+            const pdfBuffer = await provaService.gerarPDF(result.provas, result.tipoResposta, nome_professor, nome_disciplina, data);
+            // Criar arquivo ZIP
+            const archive = (0, archiver_1.default)("zip", {
+                zlib: { level: 9 } // Melhor compressão
+            });
+            // Configurar headers para download do ZIP
+            res.setHeader("Content-Type", "application/zip");
+            res.setHeader("Content-Disposition", `attachment; filename="provas_gabaritos_${prova_id}_${Date.now()}.zip"`);
+            // Pipe do archive para a resposta
+            archive.pipe(res);
+            // Adicionar PDF ao ZIP
+            archive.append(pdfBuffer, { name: `provas_${prova_id}.pdf` });
+            // Adicionar CSV ao ZIP
+            archive.append(result.csv, { name: `gabaritos_${prova_id}.csv` });
+            // Finalizar o archive
+            await archive.finalize();
+        }
+        catch (error) {
+            res.status(400).json({
                 success: false,
                 error: error.message,
             });
