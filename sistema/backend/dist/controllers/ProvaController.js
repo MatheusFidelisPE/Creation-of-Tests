@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProvaController = void 0;
 const ProvaService_1 = require("../services/ProvaService");
+const CorrecaoCSVService_1 = require("../services/CorrecaoCSVService");
 const archiver_1 = __importDefault(require("archiver"));
 const provaService = new ProvaService_1.ProvaService();
 class ProvaController {
@@ -173,6 +174,59 @@ class ProvaController {
             archive.append(result.csv, { name: `gabaritos_${prova_id}.csv` });
             // Finalizar o archive
             await archive.finalize();
+        }
+        catch (error) {
+            res.status(400).json({
+                success: false,
+                error: error.message,
+            });
+        }
+    }
+    // Corrigir provas baseado em arquivos CSV
+    static async corrigirProvasCSV(req, res) {
+        try {
+            const files = req.files;
+            const { tipo_resposta, rigor } = req.body;
+            // Validar arquivos
+            if (!files || files.length !== 2) {
+                return res.status(400).json({
+                    success: false,
+                    error: "Deve ser enviado exatamente 2 arquivos CSV (gabarito e respostas)",
+                });
+            }
+            // Validar tipo de resposta
+            if (!tipo_resposta || !["LETRAS", "SOMA_EXPONENCIAL"].includes(tipo_resposta)) {
+                return res.status(400).json({
+                    success: false,
+                    error: "tipo_resposta deve ser 'LETRAS' ou 'SOMA_EXPONENCIAL'",
+                });
+            }
+            // Validar rigor
+            if (rigor === undefined || typeof rigor !== "boolean") {
+                return res.status(400).json({
+                    success: false,
+                    error: "rigor deve ser um valor booleano (true ou false)",
+                });
+            }
+            // Extrair arquivos
+            const gabaritosFile = files.find((f) => f.fieldname === "gabaritos");
+            const respostasFile = files.find((f) => f.fieldname === "respostas");
+            if (!gabaritosFile || !respostasFile) {
+                return res.status(400).json({
+                    success: false,
+                    error: "Arquivos devem ter fieldnames 'gabaritos' e 'respostas'",
+                });
+            }
+            // Convertar buffers para string
+            const gabaritosConteudo = gabaritosFile.buffer.toString("utf-8");
+            const respostasConteudo = respostasFile.buffer.toString("utf-8");
+            // Corrigir provas
+            const correcaoService = new CorrecaoCSVService_1.CorrecaoCSVService();
+            const resultados = await correcaoService.corrigirProvas(gabaritosConteudo, respostasConteudo, tipo_resposta, rigor);
+            res.status(200).json({
+                success: true,
+                data: resultados,
+            });
         }
         catch (error) {
             res.status(400).json({

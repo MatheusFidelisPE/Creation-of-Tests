@@ -48,6 +48,7 @@ app.listen(PORT, () => {
   console.log("");
   console.log("- POST /api/provas/gerar - Gerar uma prova");
   console.log("- POST /api/provas/gerar-gabaritos - Gerar ZIP com PDFs e gabaritos CSV para múltiplas provas");
+  console.log("- POST /api/provas/corrigir-csv - Corrigir provas baseado em arquivos CSV");
   console.log("- GET  /api/provas - Listar todas as provas");
   console.log("- GET  /api/provas/:id - Buscar uma prova");
   console.log("- POST /api/provas/:id/corrigir - Corrigir uma prova");

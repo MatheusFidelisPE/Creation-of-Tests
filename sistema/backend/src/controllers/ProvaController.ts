@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { ProvaService } from "../services/ProvaService";
+import { CorrecaoCSVService } from "../services/CorrecaoCSVService";
 import archiver from "archiver";
 
 const provaService = new ProvaService();
@@ -193,6 +194,78 @@ export class ProvaController {
 
       // Finalizar o archive
       await archive.finalize();
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  }
+
+  // Corrigir provas baseado em arquivos CSV
+  static async corrigirProvasCSV(req: any, res: Response) {
+    try {
+      const files = req.files as Express.Multer.File[] | undefined;
+      const { tipo_resposta, rigor } = req.body;
+
+      // Validar arquivos
+      if (!files || files.length !== 2) {
+        return res.status(400).json({
+          success: false,
+          error: "Deve ser enviado exatamente 2 arquivos CSV (gabarito e respostas)",
+        });
+      }
+
+      // Validar tipo de resposta
+      if (!tipo_resposta || !["LETRAS", "SOMA_EXPONENCIAL"].includes(tipo_resposta)) {
+        return res.status(400).json({
+          success: false,
+          error: "tipo_resposta deve ser 'LETRAS' ou 'SOMA_EXPONENCIAL'",
+        });
+      }
+
+      // Validar rigor
+      /*if (rigor === undefined || typeof rigor !== "boolean") {
+        return res.status(400).json({
+          success: false,
+          error: "rigor deve ser um valor booleano (true ou false)",
+        });
+      }*/
+     let bRigor = false;
+     if (rigor === "true") {   
+        bRigor = true;
+      } else if (rigor === "false") {
+        bRigor = false;
+      }
+
+      // Extrair arquivos
+      const gabaritosFile = files.find((f) => f.originalname === "gabaritos");
+      const respostasFile = files.find((f) => f.originalname === "respostas");
+
+      if (!gabaritosFile || !respostasFile) {
+        return res.status(400).json({
+          success: false,
+          error: "Arquivos devem ter fieldnames 'gabaritos' e 'respostas'",
+        });
+      }
+
+      // Convertar buffers para string
+      const gabaritosConteudo = gabaritosFile.buffer.toString("utf-8");
+      const respostasConteudo = respostasFile.buffer.toString("utf-8");
+
+      // Corrigir provas
+      const correcaoService = new CorrecaoCSVService();
+      const resultados = await correcaoService.corrigirProvas(
+        gabaritosConteudo,
+        respostasConteudo,
+        tipo_resposta as "LETRAS" | "SOMA_EXPONENCIAL",
+        bRigor
+      );
+
+      res.status(200).json({
+        success: true,
+        data: resultados,
+      });
     } catch (error: any) {
       res.status(400).json({
         success: false,
