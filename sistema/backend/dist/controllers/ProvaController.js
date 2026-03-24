@@ -202,15 +202,22 @@ class ProvaController {
                 });
             }
             // Validar rigor
-            if (rigor === undefined || typeof rigor !== "boolean") {
-                return res.status(400).json({
-                    success: false,
-                    error: "rigor deve ser um valor booleano (true ou false)",
-                });
+            /*if (rigor === undefined || typeof rigor !== "boolean") {
+              return res.status(400).json({
+                success: false,
+                error: "rigor deve ser um valor booleano (true ou false)",
+              });
+            }*/
+            let bRigor = false;
+            if (rigor === "true") {
+                bRigor = true;
+            }
+            else if (rigor === "false") {
+                bRigor = false;
             }
             // Extrair arquivos
-            const gabaritosFile = files.find((f) => f.fieldname === "gabaritos");
-            const respostasFile = files.find((f) => f.fieldname === "respostas");
+            const gabaritosFile = files.find((f) => f.originalname === "gabaritos.csv");
+            const respostasFile = files.find((f) => f.originalname === "respostas.csv");
             if (!gabaritosFile || !respostasFile) {
                 return res.status(400).json({
                     success: false,
@@ -222,7 +229,7 @@ class ProvaController {
             const respostasConteudo = respostasFile.buffer.toString("utf-8");
             // Corrigir provas
             const correcaoService = new CorrecaoCSVService_1.CorrecaoCSVService();
-            const resultados = await correcaoService.corrigirProvas(gabaritosConteudo, respostasConteudo, tipo_resposta, rigor);
+            const resultados = await correcaoService.corrigirProvas(gabaritosConteudo, respostasConteudo, tipo_resposta, bRigor);
             res.status(200).json({
                 success: true,
                 data: resultados,

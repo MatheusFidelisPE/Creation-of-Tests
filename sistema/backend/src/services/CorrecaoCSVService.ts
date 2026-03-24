@@ -151,7 +151,7 @@ export class CorrecaoCSVService {
         continue;
       }
 
-      // Calcular nota da prova
+      // Calcular nota da prova (total de 10 pontos)
       let totalPontos = 0;
       for (let i = 0; i < respostasQuestoes.length; i++) {
         const resposta = respostasQuestoes[i];
@@ -160,8 +160,8 @@ export class CorrecaoCSVService {
         totalPontos += pontos;
       }
 
-      // Média das questões (máximo 1.0 por questão)
-      const nota = totalPontos / respostasQuestoes.length;
+      // Nota total: (pontos totais / número de questões) * 10
+      const nota = (totalPontos / respostasQuestoes.length) * 10;
 
       resultados.push({
         id_prova: idProva,

@@ -239,8 +239,8 @@ export class ProvaController {
       }
 
       // Extrair arquivos
-      const gabaritosFile = files.find((f) => f.originalname === "gabaritos");
-      const respostasFile = files.find((f) => f.originalname === "respostas");
+      const gabaritosFile = files.find((f) => f.originalname === "gabaritos.csv");
+      const respostasFile = files.find((f) => f.originalname === "respostas.csv");
 
       if (!gabaritosFile || !respostasFile) {
         return res.status(400).json({
