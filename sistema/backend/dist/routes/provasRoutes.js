@@ -13,7 +13,10 @@ const upload = (0, multer_1.default)({ storage: multer_1.default.memoryStorage()
 router.post("/", ProvaController_1.ProvaController.criarSelecionada);
 router.post("/gerar", ProvaController_1.ProvaController.gerar);
 router.post("/gerar-gabaritos", ProvaController_1.ProvaController.gerarGabaritos);
-router.post("/corrigir-csv", upload.array("files", 2), ProvaController_1.ProvaController.corrigirProvasCSV);
+router.post("/corrigir-provas", upload.fields([
+    { name: "gabaritos", maxCount: 1 },
+    { name: "respostas", maxCount: 1 },
+]), ProvaController_1.ProvaController.corrigirProvasCSV);
 router.get("/", ProvaController_1.ProvaController.listar);
 router.get("/:id", ProvaController_1.ProvaController.buscar);
 router.put("/:id", ProvaController_1.ProvaController.atualizar);

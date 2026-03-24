@@ -205,51 +205,43 @@ export class ProvaController {
   // Corrigir provas baseado em arquivos CSV
   static async corrigirProvasCSV(req: any, res: Response) {
     try {
-      const files = req.files as Express.Multer.File[] | undefined;
-      const { tipo_resposta, rigor } = req.body;
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+      const { tipoResposta, rigor } = req.body;
 
       // Validar arquivos
-      if (!files || files.length !== 2) {
+      if (!files || !files.gabaritos || !files.respostas) {
         return res.status(400).json({
           success: false,
-          error: "Deve ser enviado exatamente 2 arquivos CSV (gabarito e respostas)",
+          error: "Deve ser enviado exatamente 2 arquivos CSV (gabaritos e respostas)",
         });
       }
 
       // Validar tipo de resposta
-      if (!tipo_resposta || !["LETRAS", "SOMA_EXPONENCIAL"].includes(tipo_resposta)) {
+      if (!tipoResposta || !["LETRAS", "SOMA_EXPONENCIAL"].includes(tipoResposta)) {
         return res.status(400).json({
           success: false,
-          error: "tipo_resposta deve ser 'LETRAS' ou 'SOMA_EXPONENCIAL'",
+          error: "tipoResposta deve ser 'LETRAS' ou 'SOMA_EXPONENCIAL'",
         });
       }
 
-      // Validar rigor
-      /*if (rigor === undefined || typeof rigor !== "boolean") {
-        return res.status(400).json({
-          success: false,
-          error: "rigor deve ser um valor booleano (true ou false)",
-        });
-      }*/
-     let bRigor = false;
-     if (rigor === "true") {   
+      // Converter rigor string para boolean
+      let bRigor = false;
+      if (rigor === 'true' || rigor === true) {
         bRigor = true;
-      } else if (rigor === "false") {
-        bRigor = false;
       }
 
       // Extrair arquivos
-      const gabaritosFile = files.find((f) => f.originalname === "gabaritos.csv");
-      const respostasFile = files.find((f) => f.originalname === "respostas.csv");
+      const gabaritosFile = files.gabaritos[0];
+      const respostasFile = files.respostas[0];
 
       if (!gabaritosFile || !respostasFile) {
         return res.status(400).json({
           success: false,
-          error: "Arquivos devem ter fieldnames 'gabaritos' e 'respostas'",
+          error: "Erro ao processar os arquivos enviados",
         });
       }
 
-      // Convertar buffers para string
+      // Converter buffers para string
       const gabaritosConteudo = gabaritosFile.buffer.toString("utf-8");
       const respostasConteudo = respostasFile.buffer.toString("utf-8");
 
@@ -258,7 +250,7 @@ export class ProvaController {
       const resultados = await correcaoService.corrigirProvas(
         gabaritosConteudo,
         respostasConteudo,
-        tipo_resposta as "LETRAS" | "SOMA_EXPONENCIAL",
+        tipoResposta as "LETRAS" | "SOMA_EXPONENCIAL",
         bRigor
       );
 

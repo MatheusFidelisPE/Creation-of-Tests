@@ -135,5 +135,30 @@ export const useQuestoes = () => {
     }
   };
 
-  return { questoes, loading, error, fetchQuestoes, createQuestao, updateQuestao, deleteQuestao, createProva, fetchProvas, deleteProva, updateProva, gerarGabaritos };
+  const corrigirProvas = async (
+    gabaritosFile: File,
+    respostasFile: File,
+    tipoResposta: 'LETRAS' | 'SOMA_EXPONENCIAL',
+    rigor: boolean
+  ) => {
+    try {
+      const formData = new FormData();
+      formData.append('gabaritos', gabaritosFile);
+      formData.append('respostas', respostasFile);
+      formData.append('tipoResposta', tipoResposta);
+      formData.append('rigor', String(rigor));
+
+      const response = await axios.post(`${API_BASE}/provas/corrigir-provas`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      return response.data.data;
+    } catch (err: any) {
+      throw new Error(err.response?.data?.error || 'Erro ao corrigir provas');
+    }
+  };
+
+  return { questoes, loading, error, fetchQuestoes, createQuestao, updateQuestao, deleteQuestao, createProva, fetchProvas, deleteProva, updateProva, gerarGabaritos, corrigirProvas };
 };

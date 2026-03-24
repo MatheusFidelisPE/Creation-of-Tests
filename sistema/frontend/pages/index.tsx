@@ -6,16 +6,18 @@ import QuestaoModal from '../components/QuestaoModal';
 import CriarProvaModal from '../components/CriarProvaModal';
 import EditarProvaModal from '../components/EditarProvaModal';
 import GerarProvasModal from '../components/GerarProvasModal';
+import CorrecaoModal from '../components/CorrecaoModal';
 import QuestaoAccordion from '../components/QuestaoAccordion';
 import { useQuestoes } from '../hooks/useApi';
 import { Questao, Prova } from '../types';
 
 export default function Home() {
-  const { questoes, loading, createQuestao, updateQuestao, deleteQuestao, createProva, fetchProvas, deleteProva, updateProva, gerarGabaritos } = useQuestoes();
+  const { questoes, loading, createQuestao, updateQuestao, deleteQuestao, createProva, fetchProvas, deleteProva, updateProva, gerarGabaritos, corrigirProvas } = useQuestoes();
   const [modalOpen, setModalOpen] = useState(false);
   const [criarProvaModalOpen, setCriarProvaModalOpen] = useState(false);
   const [editarProvaModalOpen, setEditarProvaModalOpen] = useState(false);
   const [gerarProvasModalOpen, setGerarProvasModalOpen] = useState(false);
+  const [correcaoModalOpen, setCorrecaoModalOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [editingQuestao, setEditingQuestao] = useState<Questao | undefined>();
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
@@ -171,13 +173,21 @@ export default function Home() {
 
         <div className="mt-10">
           <h2 className="text-2xl font-bold mb-4">Provas Geradas</h2>
-          <button
-            onClick={() => setGerarProvasModalOpen(true)}
-            disabled={provas.length === 0}
-            className="mb-4 px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
-          >
-            Gerar Provas Aleatórias
-          </button>
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={() => setGerarProvasModalOpen(true)}
+              disabled={provas.length === 0}
+              className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+            >
+              Gerar Provas Aleatórias
+            </button>
+            <button
+              onClick={() => setCorrecaoModalOpen(true)}
+              className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"
+            >
+              Corrigir Provas
+            </button>
+          </div>
           <ProvasTable
             provas={provas}
             onSelect={setSelectedProva}
@@ -225,6 +235,12 @@ export default function Home() {
         onClose={() => setGerarProvasModalOpen(false)}
         provas={provas}
         onConfirm={handleGerarProvas}
+      />
+
+      <CorrecaoModal
+        isOpen={correcaoModalOpen}
+        onClose={() => setCorrecaoModalOpen(false)}
+        onCorrigir={corrigirProvas}
       />
     </div>
   );

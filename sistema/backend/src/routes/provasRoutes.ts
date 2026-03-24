@@ -12,8 +12,11 @@ router.post("/", ProvaController.criarSelecionada);
 router.post("/gerar", ProvaController.gerar);
 router.post("/gerar-gabaritos", ProvaController.gerarGabaritos);
 router.post(
-  "/corrigir-csv",
-  upload.array("files", 2),
+  "/corrigir-provas",
+  upload.fields([
+    { name: "gabaritos", maxCount: 1 },
+    { name: "respostas", maxCount: 1 },
+  ]),
   ProvaController.corrigirProvasCSV
 );
 router.get("/", ProvaController.listar);
