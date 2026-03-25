@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Questao, Alternativa } from '../types';
 
-const API_BASE = 'http://localhost:3001/api';
+// O Next.js prioriza a variável de ambiente. Se não existir (local), ele usa o localhost.
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 export const useQuestoes = () => {
   const [questoes, setQuestoes] = useState<Questao[]>([]);
