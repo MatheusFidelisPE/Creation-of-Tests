@@ -1,4 +1,5 @@
 sistema/frontend/.next/
+sistema/frontend/node_modules/
 sistema/backend/node_modules/
 sistema/backend/prisma/dev.db
 sistema/backend/prisma/dev.db-journal
